@@ -5,30 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nedräkning till preskription</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
-        .container { max-width: 800px; background: white; padding: 20px; border-radius: 8px; margin: 0 auto; }
-        h1 { text-align: center; color: #2c3e50; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
-        .expired { color: #c0392b; font-weight: bold; }
+        /* Grundinställningar */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #f4f4f9; 
+            margin: 0; 
+            padding: 10px; /* Mindre padding för mobil */
+        }
+        .container { 
+            max-width: 800px; 
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 0 auto; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            text-align: center; 
+            color: #2c3e50; 
+            font-size: 1.5em; /* Lite mindre rubrik */
+            margin-top: 0;
+        }
+        p {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+        }
+
+        /* Tabell-design */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            font-size: 14px; /* Standardstorlek desktop */
+        }
+        th, td { 
+            text-align: left; 
+            padding: 10px; 
+            border-bottom: 1px solid #ddd; 
+        }
+        th { background-color: #f8f9fa; }
+
+        /* Färger för status */
+        .expired { color: #c0392b; font-weight: bold; font-size: 0.9em; }
         .active { color: #27ae60; font-weight: bold; }
-        #debug-msg { color: red; font-weight: bold; text-align: center; margin-top: 20px; }
+
+        /* MOBILANPASSNING */
+        @media (max-width: 600px) {
+            body { padding: 5px; }
+            .container { padding: 10px; }
+            
+            table { 
+                font-size: 11px; /* Mycket mindre text på mobil */
+            }
+            th, td { 
+                padding: 6px 2px; /* Mycket mindre luft i cellerna */
+            }
+            
+            /* Tvinga kolumnerna att inte bli för breda */
+            th:nth-child(1), td:nth-child(1) { width: 15%; text-align: center; } /* Nr */
+            th:nth-child(2), td:nth-child(2) { width: 25%; } /* Datum */
+            th:nth-child(3), td:nth-child(3) { width: 60%; text-align: right; } /* Status */
+        }
+
+        #debug-msg { color: red; font-weight: bold; text-align: center; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Nedräkning till preskription</h1>
-    <p style="text-align:center; color:#666;">Preskriptionstid: 2 år från gärningsdatum.</p>
+    <h1>Nedräkning</h1>
+    <p>Preskriptionstid: 2 år från gärningsdatum.</p>
     
-    <div id="debug-msg">Laddar data... (Om denna text syns efter 2 sekunder har scriptet kraschat. Kolla citattecknen.)</div>
+    <div id="debug-msg">Laddar data...</div>
 
-    <table id="caseTable" style="display:none;">
+    <table id="caseTable">
         <thead>
             <tr>
-                <th>Åtalspunkt</th>
-                <th>Händelsedatum</th>
-                <th>Status</th>
+                <th>Nr</th>
+                <th>Datum</th>
+                <th style="text-align: right;">Status</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -37,7 +93,6 @@
 
 <script>
 try {
-    // Data från stämningsansökan
     const cases = [
         { id: "1", date: "2023-01-08" },
         { id: "2", date: "2023-01-17" },
@@ -85,19 +140,21 @@ try {
         const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
         const tr = document.createElement("tr");
+        
+        // Kortare text om preskriberad för att spara plats
         let status = days <= 0 
             ? '<span class="expired">PRESKRIBERAD</span>' 
-            : '<span class="active">' + days + ' dagar kvar</span>';
+            : '<span class="active">' + days + ' dagar</span>';
 
-        tr.innerHTML = '<td>' + c.id + '</td><td>' + c.date + '</td><td>' + status + '</td>';
+        // Högerställd status för snyggare layout på mobil
+        tr.innerHTML = '<td style="text-align:center">' + c.id + '</td>' +
+                       '<td>' + c.date + '</td>' +
+                       '<td style="text-align:right">' + status + '</td>';
         tableBody.appendChild(tr);
     });
 
-    // Om vi kom hit utan krasch, visa tabellen och dölj felmeddelandet
-    document.getElementById("caseTable").style.display = "table";
-    document.getElementById("debug-msg").style.display = "none";
-
 } catch (err) {
+    document.getElementById("debug-msg").style.display = "block";
     document.getElementById("debug-msg").innerText = "FEL: " + err.message;
 }
 </script>
