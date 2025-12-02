@@ -5,93 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nedräkning till preskription</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 800px;
-            width: 100%;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-        }
-        .info-text {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            color: #666;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .status-active {
-            font-weight: bold;
-            color: #27ae60;
-        }
-        .status-expired {
-            font-weight: bold;
-            color: #c0392b; /* Röd färg för preskriberad */
-            text-transform: uppercase;
-        }
-        .days-left {
-            font-variant-numeric: tabular-nums;
-        }
-        @media (max-width: 600px) {
-            th, td {
-                padding: 8px;
-                font-size: 14px;
-            }
-        }
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .container { max-width: 800px; background: white; padding: 20px; border-radius: 8px; margin: 0 auto; }
+        h1 { text-align: center; color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+        .expired { color: #c0392b; font-weight: bold; }
+        .active { color: #27ae60; font-weight: bold; }
+        #debug-msg { color: red; font-weight: bold; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>Nedräkning till preskription</h1>
-    <p class="info-text">Preskriptionstid för ringa brott (böter/fängelse max 1 år) är 2 år från gärningsdatum.</p>
+    <p style="text-align:center; color:#666;">Preskriptionstid: 2 år från gärningsdatum.</p>
     
-    <table id="caseTable">
+    <div id="debug-msg">Laddar data... (Om denna text syns efter 2 sekunder har scriptet kraschat. Kolla citattecknen.)</div>
+
+    <table id="caseTable" style="display:none;">
         <thead>
             <tr>
                 <th>Åtalspunkt</th>
                 <th>Händelsedatum</th>
-                <th>Status / Dagar kvar</th>
+                <th>Status</th>
             </tr>
         </thead>
-        <tbody>
-            </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
 <script>
-    [span_0](start_span)[span_1](start_span)[span_2](start_span)[span_3](start_span)[span_4](start_span)[span_5](start_span)[span_6](start_span)[span_7](start_span)[span_8](start_span)[span_9](start_span)[span_10](start_span)[span_11](start_span)[span_12](start_span)[span_13](start_span)[span_14](start_span)[span_15](start_span)[span_16](start_span)[span_17](start_span)[span_18](start_span)[span_19](start_span)[span_20](start_span)[span_21](start_span)[span_22](start_span)[span_23](start_span)[span_24](start_span)[span_25](start_span)[span_26](start_span)[span_27](start_span)[span_28](start_span)[span_29](start_span)[span_30](start_span)// Data hämtad från stämningsansökan[span_0](end_span)[span_1](end_span)[span_2](end_span)[span_3](end_span)[span_4](end_span)[span_5](end_span)[span_6](end_span)[span_7](end_span)[span_8](end_span)[span_9](end_span)[span_10](end_span)[span_11](end_span)[span_12](end_span)[span_13](end_span)[span_14](end_span)[span_15](end_span)[span_16](end_span)[span_17](end_span)[span_18](end_span)[span_19](end_span)[span_20](end_span)[span_21](end_span)[span_22](end_span)[span_23](end_span)[span_24](end_span)[span_25](end_span)[span_26](end_span)[span_27](end_span)[span_28](end_span)[span_29](end_span)[span_30](end_span)
-    // Observera att punkt 11 finns två gånger och punkt 26 saknas i originaldokumentet.
+try {
+    // Data från stämningsansökan
     const cases = [
         { id: "1", date: "2023-01-08" },
         { id: "2", date: "2023-01-17" },
@@ -128,37 +74,32 @@
 
     const tableBody = document.querySelector("#caseTable tbody");
     const today = new Date();
-    // Nollställ tidpunkten på dagen för korrekt dagberäkning
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0,0,0,0);
 
-    cases.forEach(item => {
-        const eventDate = new Date(item.date);
-        // Preskription sker exakt 2 år efter händelsen
-        const preskDate = new Date(eventDate);
-        preskDate.setFullYear(eventDate.getFullYear() + 2);
+    cases.forEach(c => {
+        const evtDate = new Date(c.date);
+        const preskDate = new Date(evtDate);
+        preskDate.setFullYear(evtDate.getFullYear() + 2);
 
-        // Beräkna skillnad i tid
-        const timeDiff = preskDate - today;
-        const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-        const row = document.createElement("tr");
-
-        let statusHtml = "";
+        const diffTime = preskDate - today;
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        if (daysLeft <= 0) {
-            statusHtml = `<span class="status-expired">PRESKRIBERAD</span>`;
-        } else {
-            statusHtml = `<span class="status-active">${daysLeft} dagar</span> <span style="font-size:0.8em; color:#888;">(t.o.m ${preskDate.toLocaleDateString('sv-SE')})</span>`;
-        }
+        const tr = document.createElement("tr");
+        let status = days <= 0 
+            ? '<span class="expired">PRESKRIBERAD</span>' 
+            : '<span class="active">' + days + ' dagar kvar</span>';
 
-        row.innerHTML = `
-            <td>Punkt ${item.id}</td>
-            <td>${eventDate.toLocaleDateString('sv-SE')}</td>
-            <td class="days-left">${statusHtml}</td>
-        `;
-
-        tableBody.appendChild(row);
+        tr.innerHTML = '<td>' + c.id + '</td><td>' + c.date + '</td><td>' + status + '</td>';
+        tableBody.appendChild(tr);
     });
+
+    // Om vi kom hit utan krasch, visa tabellen och dölj felmeddelandet
+    document.getElementById("caseTable").style.display = "table";
+    document.getElementById("debug-msg").style.display = "none";
+
+} catch (err) {
+    document.getElementById("debug-msg").innerText = "FEL: " + err.message;
+}
 </script>
 
 </body>
