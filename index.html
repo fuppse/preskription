@@ -198,7 +198,7 @@ try {
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    const sortedCases = [...casesWithPresk].sort((a, b) => a.preskDate - b.preskDate);
+    const sortedCases = [...casesWithPresk].sort((a, b) => b.preskDate - a.preskDate);
 
     sortedCases.forEach(c => {
 
