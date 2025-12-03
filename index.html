@@ -71,18 +71,46 @@
         .countdown-box {
             text-align: center;
             margin-bottom: 16px;
+            padding: 14px 12px;
+            background: #fff4f4;
+            border: 1px solid #f2c0c0;
+            border-radius: 10px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
         }
         .countdown-label {
             font-size: 0.95em;
             color: #2c3e50;
             letter-spacing: 0.3px;
             margin-bottom: 6px;
+            text-transform: uppercase;
+            font-weight: 600;
         }
         #countdown-timer {
             font-weight: 800;
             color: #c0392b;
             font-size: clamp(2rem, 6vw, 3.5rem);
             letter-spacing: 1px;
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+        .time-chip {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 4px;
+            padding: 6px 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+            border: 1px solid #f2c0c0;
+        }
+        .time-chip small {
+            font-size: 0.55em;
+            color: #a33b3b;
+            letter-spacing: 0.5px;
         }
 
         #debug-msg { color: red; font-weight: bold; text-align: center; display: none; }
@@ -91,12 +119,13 @@
 <body>
 
 <div class="container">
+    <h1>Kampen mot klockan</h1>
+    <p>Översikt över åtalspunkternas preskriptionsdatum.</p>
+
     <div class="countdown-box">
         <div id="countdown-label" class="countdown-label">Åtalspunkt --/--</div>
         <div id="countdown-timer">--</div>
     </div>
-    <h1>Kampen mot klockan</h1>
-    <p>Översikt över åtalspunkternas preskriptionsdatum.</p>
     
     <div id="debug-msg">Laddar data...</div>
 
@@ -153,8 +182,13 @@ try {
     const countdownTimer = document.getElementById("countdown-timer");
     const totalCases = cases.length;
 
+    function toLocalDate(dateStr) {
+        const [y, m, d] = dateStr.split("-").map(Number);
+        return new Date(y, m - 1, d, 0, 0, 0, 0); // Lokal midnatt
+    }
+
     const casesWithPresk = cases.map(c => {
-        const evtDate = new Date(c.date);
+        const evtDate = toLocalDate(c.date);
         const preskDate = new Date(evtDate);
         preskDate.setFullYear(evtDate.getFullYear() + 2);
         return { ...c, preskDate };
@@ -166,7 +200,7 @@ try {
     casesWithPresk.forEach(c => {
 
         const diffTime = c.preskDate - today;
-        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         
         const tr = document.createElement("tr");
         
@@ -191,11 +225,11 @@ try {
         return upcoming[0] || null;
     }
 
-    function formatDuration(ms) {
-        if (ms <= 0) return "0s";
+    function formatDurationParts(ms) {
+        if (ms <= 0) return [{ value: 0, label: "s" }];
 
         const totalSeconds = Math.floor(ms / 1000);
-        if (totalSeconds < 60) return `${totalSeconds}s`;
+        if (totalSeconds < 60) return [{ value: totalSeconds, label: "s" }];
 
         const SECONDS_IN_MINUTE = 60;
         const SECONDS_IN_HOUR = 60 * SECONDS_IN_MINUTE;
@@ -216,14 +250,25 @@ try {
         const seconds = remaining % SECONDS_IN_MINUTE;
 
         const parts = [];
-        if (months) parts.push(`${months} mån`);
-        if (weeks) parts.push(`${weeks} v`);
-        if (days) parts.push(`${days} d`);
-        if (hours || parts.length) parts.push(`${hours} h`);
-        if (minutes || parts.length) parts.push(`${minutes} m`);
-        parts.push(`${seconds}s`);
+        if (months) parts.push({ value: months, label: "mån" });
+        if (weeks) parts.push({ value: weeks, label: "v" });
+        if (days) parts.push({ value: days, label: "d" });
+        if (hours || parts.length) parts.push({ value: hours, label: "h" });
+        if (minutes || parts.length) parts.push({ value: minutes, label: "m" });
+        parts.push({ value: seconds, label: "s" });
 
-        return parts.join(" ");
+        return parts;
+    }
+
+    function renderCountdown(ms) {
+        countdownTimer.innerHTML = "";
+        const parts = formatDurationParts(ms);
+        parts.forEach(part => {
+            const span = document.createElement("span");
+            span.className = "time-chip";
+            span.innerHTML = `<span>${part.value}</span><small>${part.label}</small>`;
+            countdownTimer.appendChild(span);
+        });
     }
 
     function updateCountdown() {
@@ -237,7 +282,7 @@ try {
         countdownLabel.textContent = `Åtalspunkt ${next.id}/${totalCases}`;
 
         const diff = next.preskDate - new Date();
-        countdownTimer.textContent = formatDuration(diff);
+        renderCountdown(diff);
     }
 
     updateCountdown();
