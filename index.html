@@ -191,13 +191,16 @@ try {
         const evtDate = toLocalDate(c.date);
         const preskDate = new Date(evtDate);
         preskDate.setFullYear(evtDate.getFullYear() + 2);
+        preskDate.setDate(preskDate.getDate() + 1); // Preskriberas 00:00 dagen efter 2-årsdagen
         return { ...c, preskDate };
     });
 
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    casesWithPresk.forEach(c => {
+    const sortedCases = [...casesWithPresk].sort((a, b) => a.preskDate - b.preskDate);
+
+    sortedCases.forEach(c => {
 
         const diffTime = c.preskDate - today;
         const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
